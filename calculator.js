@@ -2,8 +2,6 @@
 const display = document.querySelector('.display');
 const key = document.querySelectorAll('button');
 
-display.textContent = 0;
-
 key.forEach(x => x.addEventListener('click', keyPress));
 // window.addEventListener('keydown', keyPress);
 // window event listener currently returning textContent of all elements on page
@@ -23,23 +21,68 @@ function keyPress(e) {
 
   clearKey();
   backspace();
+  evaluateEqual();
+  evaluateOp();
+  evaluateNum();
   
   // check the key for class=operator
-  if([...e.srcElement.classList].includes('operator')) {
-    if(operator === null) {
-      opKeyPress();
-    } else {
-      let result = operate(+value1, operator, +holder);
-      display.textContent = result;
-      opKeyPress();
-      value1 = result;
+  function evaluateOp() {
+    if([...e.srcElement.classList].includes('operator')) {
+      if(operator === null || operator === 'equal') {
+        opKeyPress();
+      } else {
+        result = operate(+value1, operator, +holder);
+        display.textContent = displayResult(result);
+        opKeyPress();
+        value1 = result;
+      }
     }
-  } else if([...e.srcElement.classList].includes('number')){
-    holder += e.target.textContent;
-    charLimit();
-    display.textContent = holder;
+  }
+
+  function opKeyPress() {
+    if(holder === '') {
+      operator = e.srcElement.classList[1];
+    } else {
+      operator = e.srcElement.classList[1];
+      value1 = holder;
+      holder = '';
+    }
   }
   
+  function evaluateNum() {
+    if([...e.srcElement.classList].includes('number')) {
+      holder += e.target.textContent;
+      charLimit();
+      decimalCheck();
+      display.textContent = holder;
+    }
+  }
+
+  console.log(`key pressed: ${e.target.textContent}`, `holder: ${holder}`, `operator: ${operator}`, `value1: ${value1}`);
+
+  function evaluateEqual() {
+    if([...e.srcElement.classList].includes('equal')) {
+      result = operate(+value1, operator, +holder);
+      operator = 'equal';
+      display.textContent = displayResult(result);
+      holder = '';
+      value1 = result;
+    }
+  }
+
+  function displayResult(num) {
+    if(num.toString().length > 10) {
+      return (+result.toPrecision(5)).toExponential();
+    } else {
+      return (+result.toPrecision(10));
+    }
+  }
+
+  function decimalCheck() {
+    if([...e.srcElement.classList].includes('decimal') && holder.substr(0, holder.length - 1).includes('.')) {
+      holder = holder.substr(0, holder.length - 1);
+    }
+  }
 
   function charLimit() {
     holder = holder.substr(0, 9);
@@ -60,17 +103,6 @@ function keyPress(e) {
       display.textContent = holder;
     }
   }
-
-  function opKeyPress() {
-    if(holder === '') {
-      operator = e.srcElement.classList[1];
-    } else {
-      operator = e.srcElement.classList[1];
-      value1 = holder;
-      holder = '';
-    }
-  }
-
 }
 
 function operate(x, operator, y) {
