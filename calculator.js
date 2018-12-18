@@ -1,23 +1,25 @@
 
 const display = document.querySelector('.display');
-const key = document.querySelectorAll('button');
+const calcBtn = document.querySelectorAll('button');
 
-key.forEach(x => x.addEventListener('click', keyPress));
-// window.addEventListener('keydown', keyPress);
-// window event listener currently returning textContent of all elements on page
+calcBtn.forEach(x => x.addEventListener('click', (e) => {
+  let clickInput = e.srcElement;
+  keyPress(clickInput);
+}));
+window.addEventListener('keyup', (e) => {
+  [...calcBtn].forEach(function(kbdInput) {
+    if(kbdInput.dataset.key === e.key) {
+      keyPress(kbdInput)
+    }
+  })
+});
 
 // storing numbers and operators
 let holder = '';
 let value1 = '';
 let operator = null;
 
-function keyPress(e) {
-
-  // check added for the window event listner
-  // ignores any keys not used by the calculator
-  if(!key) {
-    return;
-  }
+function keyPress(input) {
 
   clearKey();
   backspace();
@@ -25,10 +27,11 @@ function keyPress(e) {
   evaluateOp();
   evaluateNum();
   
-  // check the key for class=operator
   function evaluateOp() {
-    if([...e.srcElement.classList].includes('operator')) {
-      if(operator === null || operator === 'equal') {
+    if([...input.classList].includes('operator')) {
+      if(divideByZero()) {
+        return;
+      } else if(operator === null || operator === 'equal') {
         opKeyPress();
       } else {
         result = operate(+value1, operator, +holder);
@@ -41,46 +44,59 @@ function keyPress(e) {
 
   function opKeyPress() {
     if(holder === '') {
-      operator = e.srcElement.classList[1];
+      operator = input.classList[1];
     } else {
-      operator = e.srcElement.classList[1];
+      operator = input.classList[1];
       value1 = holder;
       holder = '';
     }
   }
   
   function evaluateNum() {
-    if([...e.srcElement.classList].includes('number')) {
-      holder += e.target.textContent;
+    if([...input.classList].includes('number')) {
+      holder += input.textContent;
       charLimit();
       decimalCheck();
       display.textContent = holder;
     }
   }
 
-  console.log(`key pressed: ${e.target.textContent}`, `holder: ${holder}`, `operator: ${operator}`, `value1: ${value1}`);
-
   function evaluateEqual() {
-    if([...e.srcElement.classList].includes('equal')) {
-      result = operate(+value1, operator, +holder);
-      operator = 'equal';
-      display.textContent = displayResult(result);
-      holder = '';
-      value1 = result;
+    if([...input.classList].includes('equal')){
+      if(holder === '' || value1 === ''){
+        return;  // stops operation when values are undefined
+      } else if(divideByZero()) {
+        return; // stops operation
+      } else {
+        result = operate(+value1, operator, +holder);
+        operator = 'equal';
+        display.textContent = displayResult(result);
+        holder = '';
+        value1 = result;
+      }
     }
   }
 
   function displayResult(num) {
-    if(num.toString().length > 10) {
-      return (+result.toPrecision(5)).toExponential();
+    if(num.toString().includes('.')) {
+      return (+result.toPrecision(8));
     } else {
-      return (+result.toPrecision(10));
+      return (+result.toPrecision(9));
     }
   }
 
   function decimalCheck() {
-    if([...e.srcElement.classList].includes('decimal') && holder.substr(0, holder.length - 1).includes('.')) {
+    if([...input.classList].includes('decimal') && holder.substr(0, holder.length - 1).includes('.')) {
       holder = holder.substr(0, holder.length - 1);
+    }
+  }
+
+  function divideByZero() {
+    if(operator === 'divide' && +holder === 0) {
+      operator = null;
+      holder = '';
+      alert('No dividing by zero, please!');
+      return true;
     }
   }
 
@@ -89,7 +105,7 @@ function keyPress(e) {
   }
 
   function clearKey() {
-    if([...e.srcElement.classList].includes('clear')) {
+    if([...input.classList].includes('clear')) {
       holder = '';
       value1 = '';
       operator = null;
@@ -98,7 +114,7 @@ function keyPress(e) {
   }
 
   function backspace() {
-    if([...e.srcElement.classList].includes('backspace')) {
+    if([...input.classList].includes('backspace')) {
       holder = holder.substr(0, holder.length - 1);
       display.textContent = holder;
     }
